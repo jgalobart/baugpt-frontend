@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Send, Image as ImageIcon, X } from 'lucide-react';
 
-const MAX_IMAGES = 10;
+const MAX_IMAGES = 10000;
 
 function MessageInput({ onSend, disabled }) {
   const [message, setMessage] = useState('');
