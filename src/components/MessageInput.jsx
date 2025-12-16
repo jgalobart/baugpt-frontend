@@ -3,7 +3,7 @@ import { Send, Image as ImageIcon, X } from 'lucide-react';
 
 const MAX_IMAGES = 10000;
 
-function MessageInput({ onSend, disabled }) {
+function MessageInput({ onSend, disabled, lastMessage }) {
   const [message, setMessage] = useState('');
   const [images, setImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);

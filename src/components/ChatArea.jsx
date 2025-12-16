@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
+import WebProjectButton from './WebProjectButton';
 
 function ChatArea({ conversation, onMessageSent }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -53,10 +54,25 @@ function ChatArea({ conversation, onMessageSent }) {
     );
   }
 
+  const lastMessage = conversation.messages.length > 0 
+    ? conversation.messages[conversation.messages.length - 1] 
+    : null;
+
   return (
-    <div className="flex-1 flex flex-col h-screen">
+    <div className="flex-1 flex flex-col h-screen relative">
+      {/* Botons flotants de projecte web */}
+      <WebProjectButton 
+        onSend={handleSendMessage} 
+        disabled={isLoading}
+        lastMessage={lastMessage}
+      />
+      
       <MessageList messages={conversation.messages} isLoading={isLoading} />
-      <MessageInput onSend={handleSendMessage} disabled={isLoading} />
+      <MessageInput 
+        onSend={handleSendMessage} 
+        disabled={isLoading}
+        lastMessage={lastMessage}
+      />
     </div>
   );
 }
