@@ -8,6 +8,8 @@ function Sidebar({
   onSelectConversation,
   onDeleteConversation 
 }) {
+  const safeConversations = Array.isArray(conversations) ? conversations : [];
+
   return (
     <div className="w-64 bg-sidebar-bg flex flex-col h-screen">
       {/* Header */}
@@ -20,15 +22,15 @@ function Sidebar({
           <span>Nova conversa</span>
         </button>
       </div>
-
+      
       {/* Conversations List */}
       <div className="flex-1 overflow-y-auto p-2">
-        {conversations.length === 0 ? (
+        {safeConversations.length === 0 ? (
           <div className="text-gray-500 text-center mt-8 px-4 text-sm">
             No hi ha converses. Crea'n una nova!
           </div>
         ) : (
-          conversations.map((conv) => (
+          safeConversations.map((conv) => (
             <div
               key={conv.id}
               className={`group flex items-center gap-2 px-3 py-3 mb-1 rounded-lg cursor-pointer transition-colors ${

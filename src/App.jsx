@@ -22,9 +22,17 @@ function App() {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
       const response = await fetch(`${apiUrl}/api/conversations/${encodeURIComponent(name)}`);
       const data = await response.json();
-      setConversations(data);
+
+      if (!response.ok) {
+        console.error('Error loading conversations:', data);
+        setConversations([]);
+        return;
+      }
+
+      setConversations(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error loading conversations:', error);
+      setConversations([]);
     }
   };
 
@@ -43,7 +51,13 @@ function App() {
         body: JSON.stringify({ studentName })
       });
       const newConv = await response.json();
-      setConversations([newConv, ...conversations]);
+
+      if (!response.ok) {
+        console.error('Error creating conversation:', newConv);
+        return;
+      }
+
+      setConversations((prev) => [newConv, ...(Array.isArray(prev) ? prev : [])]);
       setCurrentConversationId(newConv.id);
       setCurrentConversation(newConv);
     } catch (error) {
@@ -67,7 +81,7 @@ function App() {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
       await fetch(`${apiUrl}/api/conversation/${id}`, { method: 'DELETE' });
-      setConversations(conversations.filter(c => c.id !== id));
+      setConversations((prev) => (Array.isArray(prev) ? prev.filter(c => c.id !== id) : []));
       if (currentConversationId === id) {
         setCurrentConversationId(null);
         setCurrentConversation(null);
@@ -80,11 +94,14 @@ function App() {
   const handleMessageSent = (updatedConversation) => {
     setCurrentConversation(updatedConversation);
     // Update conversations list
-    setConversations(conversations.map(c => 
-      c.id === updatedConversation.id 
-        ? { ...c, title: updatedConversation.title, updatedAt: updatedConversation.updatedAt }
-        : c
-    ));
+    setConversations((prev) => {
+      if (!Array.isArray(prev)) return [];
+      return prev.map(c => 
+        c.id === updatedConversation.id 
+          ? { ...c, title: updatedConversation.title, updatedAt: updatedConversation.updatedAt }
+          : c
+      );
+    });
   };
 
   if (!studentName) {
