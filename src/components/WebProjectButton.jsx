@@ -32,10 +32,17 @@ Per JavaScript:
 console.log('...');
 \`\`\`
 
+**ASSETS (opcional):**
+Si necessites imatges o icones, pots incloure-les en base64 amb aquest format:
+[logo.png](data:image/png;base64,iVBORw0KGgo...)
+
+O aquest format alternatiu:
+**icon.svg**: data:image/svg+xml;base64,PHN2Zy...
+
 **IMPORTANT:**
 - Genera SEMPRE els 3 fitxers complets
-- NO utilitzis assets en base64 (són massa grans)
-- Utilitza només CSS i JavaScript per crear el disseny
+- Si afegeixes assets, mantén-los petits (màx 50KB cada un)
+- Preferiblement utilitza SVG per icones (són més petits)
 - El codi ha de ser funcional i modern
 - Inclou comentaris explicatius
 

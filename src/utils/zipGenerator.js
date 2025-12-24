@@ -10,7 +10,10 @@ import JSZip from 'jszip';
 export function extractFilesFromResponse(responseText) {
   const files = [];
   
-  // Pattern per trobar blocs de codi amb nom de fitxer
+  console.log('🔍 Buscant fitxers a la resposta...');
+  
+  // Pattern millorat per trobar blocs de codi amb nom de fitxer
+  // Suporta: ```html:index.html, ```css:css/styles.css, ```js:js/script.js
   const codeBlockPattern = /```(?:html|css|javascript|js)?:?([\w\/\-\.]+)\n([\s\S]*?)```/gi;
   
   let match;
@@ -18,19 +21,25 @@ export function extractFilesFromResponse(responseText) {
     const filename = match[1].trim();
     const content = match[2].trim();
     
+    console.log(`✅ Trobat fitxer de codi: ${filename} (${content.length} chars)`);
+    
     files.push({
       path: filename,
       content: content
     });
   }
   
-  // També buscar assets en base64 amb el format: [filename.ext](data:...)
-  const base64Pattern = /\[([^\]]+\.(png|jpg|jpeg|gif|svg|ico|webp))\]\(data:([^;]+);base64,([^\)]+)\)/gi;
+  // També buscar assets en base64 amb diversos formats:
+  // Format 1: [filename.ext](data:image/png;base64,...)
+  // Format 2: **filename.ext**: data:image/png;base64,...
+  const base64Pattern1 = /\[([^\]]+\.(png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf))\]\(data:([^;]+);base64,([^\)]+)\)/gi;
   
-  while ((match = base64Pattern.exec(responseText)) !== null) {
+  while ((match = base64Pattern1.exec(responseText)) !== null) {
     const filename = match[1];
     const mimeType = match[3];
     const base64Data = match[4];
+    
+    console.log(`✅ Trobat asset base64: ${filename} (${base64Data.length} chars)`);
     
     files.push({
       path: filename,
@@ -38,6 +47,25 @@ export function extractFilesFromResponse(responseText) {
       isBase64: true
     });
   }
+  
+  // Format alternatiu: **filename.ext**: data:...
+  const base64Pattern2 = /\*\*([^\*]+\.(png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf))\*\*:\s*data:([^;]+);base64,([^\s]+)/gi;
+  
+  while ((match = base64Pattern2.exec(responseText)) !== null) {
+    const filename = match[1];
+    const mimeType = match[3];
+    const base64Data = match[4];
+    
+    console.log(`✅ Trobat asset base64 (format 2): ${filename} (${base64Data.length} chars)`);
+    
+    files.push({
+      path: filename,
+      content: base64Data,
+      isBase64: true
+    });
+  }
+  
+  console.log(`📦 Total fitxers trobats: ${files.length}`);
   
   return files;
 }
