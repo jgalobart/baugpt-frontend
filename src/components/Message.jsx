@@ -27,6 +27,18 @@ function Message({ message }) {
     return [];
   };
 
+  // Build image URL - supports both old format (data) and new format (imageId)
+  const getImageUrl = (img) => {
+    if (img.data) {
+      return `data:${img.mimeType};base64,${img.data}`;
+    }
+    if (img.imageId) {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      return `${apiUrl}/api/image/${img.imageId}`;
+    }
+    return null;
+  };
+
   const text = getText();
   const images = getImages();
 
@@ -45,14 +57,18 @@ function Message({ message }) {
           {/* Images */}
           {images.length > 0 && (
             <div className="mb-4 flex flex-wrap gap-2">
-              {images.map((img, idx) => (
-                <img
-                  key={idx}
-                  src={`data:${img.mimeType};base64,${img.data}`}
-                  alt={`Uploaded ${idx + 1}`}
-                  className="max-w-xs max-h-64 rounded-lg object-contain border border-gray-600"
-                />
-              ))}
+              {images.map((img, idx) => {
+                const url = getImageUrl(img);
+                if (!url) return null;
+                return (
+                  <img
+                    key={idx}
+                    src={url}
+                    alt={`Uploaded ${idx + 1}`}
+                    className="max-w-xs max-h-64 rounded-lg object-contain border border-gray-600"
+                  />
+                );
+              })}
             </div>
           )}
 
