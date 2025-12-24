@@ -8,14 +8,88 @@ function App() {
   const [conversations, setConversations] = useState([]);
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [currentConversation, setCurrentConversation] = useState(null);
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [isSharedView, setIsSharedView] = useState(false);
+
+  const getConversationIdFromUrl = () => {
+    const path = window.location.pathname;
+    const match = path.match(/^\/([a-zA-Z0-9-]+)$/);
+    return match ? match[1] : null;
+  };
+
+  const setConversationIdInUrl = (id, { replace = false } = {}) => {
+    const next = id ? `/${id}` : '/';
+    if (replace) {
+      window.history.replaceState({}, '', next);
+    } else {
+      window.history.pushState({}, '', next);
+    }
+  };
 
   useEffect(() => {
     const storedName = localStorage.getItem('studentName');
+    const conversationIdFromUrl = getConversationIdFromUrl();
+
     if (storedName) {
       setStudentName(storedName);
       loadConversations(storedName);
+      setIsBootstrapping(false);
+      return;
     }
+
+    if (!conversationIdFromUrl) {
+      setIsBootstrapping(false);
+      return;
+    }
+
+    (async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+        const response = await fetch(`${apiUrl}/api/conversation/${conversationIdFromUrl}`);
+        const conv = await response.json();
+
+        if (!response.ok || !conv || !conv.studentName) {
+          console.error('Error loading conversation from URL:', conv);
+          setConversationIdInUrl(null, { replace: true });
+          setIsBootstrapping(false);
+          return;
+        }
+
+        setIsSharedView(true);
+        setCurrentConversationId(conversationIdFromUrl);
+        setCurrentConversation(conv);
+        setIsBootstrapping(false);
+      } catch (error) {
+        console.error('Error bootstrapping from URL:', error);
+        setIsBootstrapping(false);
+      }
+    })();
   }, []);
+
+  useEffect(() => {
+    if (!studentName && !isSharedView) return;
+
+    const syncFromUrl = async () => {
+      const id = getConversationIdFromUrl();
+      if (!id) {
+        setCurrentConversationId(null);
+        setCurrentConversation(null);
+        setIsSharedView(false);
+        return;
+      }
+
+      if (id === currentConversationId) return;
+      await handleSelectConversation(id, { syncUrl: false });
+    };
+
+    const onPopState = () => {
+      syncFromUrl();
+    };
+
+    window.addEventListener('popstate', onPopState);
+    syncFromUrl();
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [studentName, currentConversationId]);
 
   const loadConversations = async (name) => {
     try {
@@ -60,18 +134,29 @@ function App() {
       setConversations((prev) => [newConv, ...(Array.isArray(prev) ? prev : [])]);
       setCurrentConversationId(newConv.id);
       setCurrentConversation(newConv);
+      setConversationIdInUrl(newConv.id);
     } catch (error) {
       console.error('Error creating conversation:', error);
     }
   };
 
-  const handleSelectConversation = async (id) => {
+  const handleSelectConversation = async (id, { syncUrl = true } = {}) => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
       const response = await fetch(`${apiUrl}/api/conversation/${id}`);
       const conv = await response.json();
+
+      if (!response.ok) {
+        console.error('Error loading conversation:', conv);
+        setCurrentConversationId(null);
+        setCurrentConversation(null);
+        setConversationIdInUrl(null, { replace: true });
+        return;
+      }
+
       setCurrentConversationId(id);
       setCurrentConversation(conv);
+      if (syncUrl) setConversationIdInUrl(id);
     } catch (error) {
       console.error('Error loading conversation:', error);
     }
@@ -85,6 +170,7 @@ function App() {
       if (currentConversationId === id) {
         setCurrentConversationId(null);
         setCurrentConversation(null);
+        setConversationIdInUrl(null);
       }
     } catch (error) {
       console.error('Error deleting conversation:', error);
@@ -103,6 +189,20 @@ function App() {
       );
     });
   };
+
+  if (isBootstrapping) return null;
+
+  if (isSharedView) {
+    return (
+      <div className="flex h-screen bg-chat-bg text-white">
+        <ChatArea
+          conversation={currentConversation}
+          onMessageSent={() => {}}
+          readOnly={true}
+        />
+      </div>
+    );
+  }
 
   if (!studentName) {
     return <WelcomeModal onSubmit={handleNameSubmit} />;

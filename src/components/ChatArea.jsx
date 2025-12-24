@@ -3,11 +3,11 @@ import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import WebProjectButton from './WebProjectButton';
 
-function ChatArea({ conversation, onMessageSent }) {
+function ChatArea({ conversation, onMessageSent, readOnly = false }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSendMessage = async (message, images) => {
-    if (!conversation) return;
+    if (!conversation || readOnly) return;
 
     setIsLoading(true);
     try {
@@ -63,14 +63,14 @@ function ChatArea({ conversation, onMessageSent }) {
       {/* Botons flotants de projecte web */}
       <WebProjectButton 
         onSend={handleSendMessage} 
-        disabled={isLoading}
+        disabled={isLoading || readOnly}
         lastMessage={lastMessage}
       />
       
       <MessageList messages={conversation.messages} isLoading={isLoading} />
       <MessageInput 
         onSend={handleSendMessage} 
-        disabled={isLoading}
+        disabled={isLoading || readOnly}
         lastMessage={lastMessage}
       />
     </div>
